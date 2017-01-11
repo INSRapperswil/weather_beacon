@@ -21,7 +21,7 @@ Danach lässt sich die Farbe der LED beliebig einstellen. Als Parameter der Funk
 
     >>> pycom.rgbled(0xff0000)
     
-## LED blinken lassen
+### LED blinken lassen
 Um die LED blinken zu lassen benötigen wir noch das Modul time, welches uns erlaubt eine Pause im Programm einzulegen
 
     >>> import utime
@@ -33,7 +33,7 @@ Um die LED blinken zu lassen benötigen wir noch das Modul time, welches uns erl
     
 Rücken Sie das Programm jeweils mit 4 Leerschlägen ein. Am Schluss sind bis zu 3 Enter eingaben nötig, bevor das Programm zu laufen beginnt. Abbrechen können Sie es, indem Sie CTRL und C gleichzeitig drücken.
 
-## LED Blau Rot blinken
+### LED Blau Rot blinken
 Passen Sie das Programm so an, dass es abwechselnd Rot und Blau blinkt mit einer halben Sekunde Pause dazwischen.
 
 

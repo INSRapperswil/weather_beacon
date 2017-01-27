@@ -8,6 +8,31 @@ In diesem Tutorial lernen Sie mit wie Sie ein Weather-Beacon Programmieren, welc
 ## Erste Schritte
 Verbinden Sie das Board via USB Kabel mit ihrem Computer und öffnen Sie ein Terminal auf der entsprechenden seriellen Schnittstelle mit 115200 Baud. Nun gelangen Sie direkt auf den interkativen Python Interpreter des Boards und können mit dem Programmieren loslegen.
 
+### Python Interpreter als Rechner
+Im unteren Teil der Pymakr IDE haben Sie direkten Zugriff auf den Python Interpreter auf dem WiPy board. Das heisst, alle Befehle die Sie hier eingeben werden direkt auf dem WiPy ausgeführt.
+Benutzen Sie den Interpreter als Taschenrechner.
+#### Übung 1
+    13+24
+    84/2
+    1.141*1.141
+
+### Variabeln
+Eine der leistungsfähigsten Funktionen einer Programmiersprache ist die Fähigkei mit Variabeln zu arbeiten. Ein Variablenname ist dabei ein Name, der sich auf einen Wert bezieht.
+Durch die Zuweisung wird eine neue Variable erstellt, und ihr wird ein Wert zugewiesen.
+Variabeln werden in Python einfach als variabelname = wert deklariert und benötigen keine besondere zusätztliche Auszeichnung.
+Für Zahlen:
+   wert = 2.0
+
+Für Text:
+   meintext = "Dies ist mein text"
+
+#### Übung 2
+Berechne den Flächeninhalt eines Rechtecks. Definiere dazu die Höhe mit dem Namen hoehe und dem wert 2.5 und die Breite mit dem Namen breite mit dem Wert 3.5.
+Berechne anschliessend die Fläche nur mit den Variabeln.
+
+#### Funktionen
+Für
+
 ## LED
 Um die interne LED anzusteuern müssen wir als erstes das pycom Modul laden
 

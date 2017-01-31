@@ -1,91 +1,178 @@
-import urequests
+import urequest
 import time
-from machine import Pin,  RTC
+import pycom
+from machine import Pin, RTC
 from settings import Settings
-from ntplib import NTPClient
+from untplib import NTPClient
+import network
 
 API_KEY = "123"
 NUMBER_OF_3HRS_WINDOWS = 2
 
 
 class Main(object):
+    CONFIGURE_WLAN = '2'
+    CONFIGURE_LOCATION = '1'
+    REPL_MODE = '3'
+    BEACON_MODE = '4'
+    SHOW_SETTINGS = '5'
+    SHOW_MENU = 'x'
+
+    CHOICES = [CONFIGURE_WLAN, CONFIGURE_LOCATION, REPL_MODE, BEACON_MODE, SHOW_SETTINGS]
+
     def __init__(self):
-        self.settings = Settings('settings.json')
-                
+        self.settings = Settings('/flash/settings.json')
+        self.exit = False
+        self.wlan = None
+
     def configure(self):
-        print('Config menu')
-        print('Type c to configure device, otherwise just wait')
-        read_data = input()
 
-        if 'c' in read_data:
-            wifi_password = input('WiFi Password: ')
-            ssid = input('Enter SSID: ')
-            self.settings.set('ssid',  ssid)
-            self.settings.set('password',  wifi_password)
-        else:
-            print('No configuration changes')
-        print('Booting')
+        choice = Main.SHOW_MENU
+        while choice not in Main.CHOICES:
+            try:
+                print('\n\nConfiguration menu')
+                print('-' * 30)
+                choice = input(
+                    'Type:\n  1) to configure location settings\n  2) to configure WiFi Settings\n  3) to get REPL for your own experiments\n  4) start the weather beacon application\n'
+                    '  5) to show all settings\n\nChoice: ')[
+                    0].lower()
+                if choice == Main.CONFIGURE_WLAN:
+                    print('Scanning for available networks...')
+                    if not self.wlan:
+                        self.wlan = network.WLAN(mode=network.WLAN.STA)
+                    wlans = self.wlan.scan()
+                    print("Available WiFi networks:")
+                    for i, wlan in enumerate(wlans):
+                        sec_string = 'Open'
+                        if wlan.sec == network.WLAN.WEP:
+                            sec_string = 'WEP'
+                        elif wlan.sec == network.WLAN.WPA:
+                            sec_string = 'WPA'
+                        elif wlan.sec == network.WLAN.WPA2:
+                            sec_string = 'WPA2'
 
+                        print('%i: %s security: %s' % (i, wlan.ssid, sec_string))
 
-    def do_connect():
-        import network
-        wlan = network.WLAN(network.STA_IF)
-        wlan.active(True)
-        if not wlan.isconnected():
+                    # Chose ssid to connect to
+                    ssid_chosen = False
+                    while not ssid_chosen:
+                        ssid = input('Enter SSID number: ')
+                        try:
+                            wlan = wlans[int(ssid)]
+                            wifi_password = None
+                            if (wlan.sec != 0):
+                                wifi_password = input('Enter WiFi Password: ')
+                            print('Settings saved')
+                            choice = Main.SHOW_MENU
+                            ssid_chosen = True
+                            self.settings.set('ssid', wlan.ssid)
+                            self.settings.set('wifi_sec', wlan.sec)
+                            self.settings.set('password', wifi_password)
+                            print('Settings saved')
+                        except ValueError:
+                            continue
+                elif choice == Main.CONFIGURE_LOCATION:
+                    location = input('Name of the location (e.g Zurich): ')
+                    self.settings.set('location', location)
+                    choice = Main.SHOW_MENU
+                    print('Location saved')
+
+                elif choice == Main.REPL_MODE:
+                    print('Starting REPL mode')
+                    self.exit = True
+                elif choice == Main.BEACON_MODE:
+                    print('Starting beacon application')
+                elif choice == Main.SHOW_SETTINGS:
+                    print('\n\nSettings')
+                    print('-' * 30)
+                    ssid = self.settings.get('ssid')
+                    password = self.settings.get('password')
+                    location = self.settings.get('location')
+                    print('WiFi SSID: %s \nWiFi Password: %s\nLocation: %s' % (ssid, password, location))
+                    choice = Main.SHOW_MENU
+
+            except KeyboardInterrupt:
+                choice = Main.SHOW_MENU
+
+    def blink(self, color, times):
+        pycom.rgbled(color)
+        time.sleep(1)
+        pycom.rgbled(0x000000)
+        time.sleep(1)
+
+    def do_connect(self):
+        if not self.wlan:
+            self.wlan = network.WLAN(mode=network.WLAN.STA)
+        if not self.wlan.isconnected():
             ssid = self.settings.get('ssid')
             password = self.settings.get('password')
-            wlan.connect(ssid, password)
+            sec = self.settings.get('wifi_sec')
+
+            if sec:
+                self.wlan.connect(ssid, auth=(sec, password))
+            else:
+                self.wlan.connect(ssid, auth=None)
             print('Connecting to network %s...' % ssid)
-            while not wlan.isconnected():
-                pass
+
+            for i in range(10):
+                if not self.wlan.isconnected():
+                    self.blink(0x0000FF, 3)
+            while not self.wlan.isconnected():
+                self.blink(0xFF0000)
+            self.blink(0x00FF00, 1)
             print('Connected to %s' % ssid)
-        print('network config:', wlan.ifconfig())
-        
-    def setup_time():
+
+        self.blink(0x00FF00, 3)
+        print('network config:', self.wlan.ifconfig())
+
+    def setup_time(self):
         ntp_client = NTPClient()
-        resp = ntp_client.request('0.ch.pool.ntp.org',  version=3,  port=123)
+        resp = ntp_client.request('0.ch.pool.ntp.org', version=3, port=123)
         rtc = RTC()
-        rtc.init(time.localtime(time.time() + resp.offset))   
+        rtc.init(time.localtime(time.time() + resp.offset))
+
+    def get_weather(self):
+        print('Querying weather data')
+        url = "http://api.openweathermap.org/data/2.5/forecast?q=Hinwil,ch&mode=json&cnt=%i&appid=%s" % (
+            NUMBER_OF_3HRS_WINDOWS, API_KEY)
+
+        try:
+            response = urequest.get(url)
+            json = response.json()
+            forecasts = json['list']
+        except Exception:
+            return weather.NODATA
+
+
+class weather(object):
+    SUNSHINE = 0xff
+    RAIN = 0x0000FF
+    SNOW = 0xFFFFFF
+    NODATA = 0x000000
 
 
 if __name__ == '__main__':
+    print('start')
     main = Main()
-    #main.do_connect()
-    #main.setup_time()
-    main.configure()
-    
-    
-    """"
-        
-    do_connect()
-    dictionary = {num: False for num in range(NUMBER_OF_3HRS_WINDOWS)}
+    # main.do_connect()
+    # main.setup_time()
 
-    url = "http://api.openweathermap.org/data/2.5/forecast?q=Hinwil,ch&mode=json&cnt=%i&appid=%s" % (
-        NUMBER_OF_3HRS_WINDOWS, API_KEY)
-    print(url)
-    while True:
+    # detect pressed button
+    button = Pin("G17", Pin.IN, pull=Pin.PULL_UP)
+    val = 10
+    for i in range(10):
+        val -= button.value()
+        time.sleep_ms(20)
+
+    if val > 6:
+        main.configure()
+
+    if not main.exit:
         try:
-            response = urequests.get(url)
-        except Exception:
-            continue
-
-        json = response.json()
-
-        forecasts = json['list']
-        rain = False
-        for i, forecast in enumerate(forecasts[0:NUMBER_OF_3HRS_WINDOWS]):
-            print(forecast["rain"])
-            if forecast["rain"]:
-                rain = True
-                dictionary[i] = True
-
-        if rain:
-            print("It is going to rain!")
-        else:
-            print("It wont rain")
-
-        for k in dictionary.items():
-            pin = Pin(k + 3, Pin.OUT)
-            pin.high if k else pin.low()
-        print(dictionary)
-        time.sleep(10)"""
+            pycom.heartbeat(False)
+            main.do_connect()
+            while True:
+                main.get_weather()
+                time.sleep(600)
+        except KeyboardInterrupt:
+            print('Main interrupted')

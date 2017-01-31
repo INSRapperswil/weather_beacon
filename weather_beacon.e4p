@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Project SYSTEM "Project-5.1.dtd">
 <!-- Pymakr project file for project weather_beacon -->
-<!-- Saved: 2017-01-11, 11:05:54 -->
+<!-- Saved: 2017-01-31, 20:57:45 -->
 <!-- Copyright (C) 2017 0.1, 0.1 -->
 <Project version="5.1">
   <Language>en_US</Language>
@@ -18,8 +18,11 @@
     <Source>boot.py</Source>
     <Source>lib/__init__.py</Source>
     <Source>lib/settings.py</Source>
+    <Source>lib/simple.py</Source>
+    <Source>lib/untplib.py</Source>
+    <Source>lib/urequest.py</Source>
+    <Source>settings.json</Source>
     <Source>main.py</Source>
-    <Source>query_weather.py</Source>
   </Sources>
   <Forms/>
   <Translations/>
@@ -38,5 +41,6 @@
     <FiletypeAssociation pattern="*.py3" type="SOURCES"/>
     <FiletypeAssociation pattern="*.pyw" type="SOURCES"/>
     <FiletypeAssociation pattern="*.pyw3" type="SOURCES"/>
+    <FiletypeAssociation pattern="*.json" type="SOURCES"/>
   </FiletypeAssociations>
 </Project>

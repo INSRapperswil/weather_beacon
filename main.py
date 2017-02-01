@@ -1,4 +1,4 @@
-import urequest
+import urequests
 import time
 import pycom
 from machine import Pin, RTC
@@ -6,8 +6,8 @@ from settings import Settings
 from untplib import NTPClient
 import network
 
-API_KEY = "123"
-NUMBER_OF_3HRS_WINDOWS = 2
+API_KEY = 'd0f45e3399601a8ffe9724652905c8f7'
+NUMBER_OF_3HRS_WINDOWS = 4
 
 
 class Main(object):
@@ -96,9 +96,9 @@ class Main(object):
 
     def blink(self, color, times):
         pycom.rgbled(color)
-        time.sleep(1)
+        time.sleep_ms(500)
         pycom.rgbled(0x000000)
-        time.sleep(1)
+        time.sleep_ms(500)
 
     def do_connect(self):
         if not self.wlan:
@@ -116,7 +116,7 @@ class Main(object):
 
             for i in range(10):
                 if not self.wlan.isconnected():
-                    self.blink(0x0000FF, 3)
+                    self.blink(0x0000FF, 2)
             while not self.wlan.isconnected():
                 self.blink(0xFF0000)
             self.blink(0x00FF00, 1)
@@ -136,26 +136,53 @@ class Main(object):
         url = "http://api.openweathermap.org/data/2.5/forecast?q=Hinwil,ch&mode=json&cnt=%i&appid=%s" % (
             NUMBER_OF_3HRS_WINDOWS, API_KEY)
 
+
+        codes = []
         try:
-            response = urequest.get(url)
+            response = urequests.get(url)
             json = response.json()
             forecasts = json['list']
-        except Exception:
+            for item in forecasts:
+                codes += int(item['weather'][0]['id'])
+        except Exception as e:
+            print('Something went wrong while processing weather data')
+            self.blink(0xFF0000, 3)
+            print(e)
             return weather.NODATA
+
+        rain = False
+        sun = False
+        snow = False
+        clouds = False
+
+        for code in codes:
+            if 300 <= code <=600:
+                rain = True
+            if 600 <= code <= 600:
+                snow = True
+            if code == 800 or code == 801:
+                sun = True
+            if code <= 800 <= 900:
+                clouds = True
+
+        if snow:
+            return weather.SNOW
+        if rain:
+            return weather.RAIN
+        if sun:
+            return weather.SUNSHINE
 
 
 class weather(object):
-    SUNSHINE = 0xff
+    SUNSHINE = 0xFFFF00
     RAIN = 0x0000FF
     SNOW = 0xFFFFFF
-    NODATA = 0x000000
+    NODATA = 0xFF0000
 
 
 if __name__ == '__main__':
     print('start')
     main = Main()
-    # main.do_connect()
-    # main.setup_time()
 
     # detect pressed button
     button = Pin("G17", Pin.IN, pull=Pin.PULL_UP)
@@ -172,7 +199,9 @@ if __name__ == '__main__':
             pycom.heartbeat(False)
             main.do_connect()
             while True:
-                main.get_weather()
-                time.sleep(600)
+                weather_color = main.get_weather()
+                pycom.rgbled(weather_color)
+
+                time.sleep(10)
         except KeyboardInterrupt:
             print('Main interrupted')

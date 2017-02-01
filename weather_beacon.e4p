@@ -20,7 +20,7 @@
     <Source>lib/settings.py</Source>
     <Source>lib/simple.py</Source>
     <Source>lib/untplib.py</Source>
-    <Source>lib/urequest.py</Source>
+    <Source>lib/urequests.py</Source>
     <Source>settings.json</Source>
     <Source>main.py</Source>
   </Sources>

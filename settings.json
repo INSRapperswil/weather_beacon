@@ -1,5 +1,6 @@
 {
   "password": "",
-  "ssid": "",
-  "wifi_sec": ""
+  "ssid": "I4G_WLAN",
+  "wifi_sec": "", 
+  "location":"Rapperswil"
 }

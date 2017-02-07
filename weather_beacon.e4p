@@ -19,7 +19,6 @@
     <Source>lib/__init__.py</Source>
     <Source>lib/settings.py</Source>
     <Source>lib/simple.py</Source>
-    <Source>lib/untplib.py</Source>
     <Source>lib/urequests.py</Source>
     <Source>settings.json</Source>
     <Source>main.py</Source>

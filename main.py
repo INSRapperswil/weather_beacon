@@ -152,6 +152,7 @@ class Main(object):
             self.alarm.callback(self.get_weather)
         else:
             self.alarm = Timer.Alarm(self.do, QUERY_INTERVAL, periodic=True)
+            self.do(None)
         print('Weather Beacon app started')
 
     def stop(self):
